@@ -8,21 +8,10 @@ const axiosPlugin = {
     }
     Vue.__nuxt_axios_installed__ = true
 
-    // Make `this.$axios` available
     if (!Vue.prototype.hasOwnProperty('$axios')) {
-      // Add mixin to add this._axios
-      Vue.mixin({
-        beforeCreate () {
-          // Check if `axios` has been defined in App
-          // Then fallback to $root.$axios
-          // Finally use global instance of Axios
-          this._axios = this.$options.axios || this.$root.$axios || Axios
-        }
-      })
-      // Add this.$axios instance
       Object.defineProperty(Vue.prototype, '$axios', {
         get () {
-          return this._axios
+          return this.$root.$options.$axios
         }
       })
     }
@@ -62,12 +51,17 @@ const axiosPlugin = {
 Vue.use(axiosPlugin)
 
 // Set requests token
-function setToken (token, type = 'Bearer') {
-  if (!token) {
-    delete this.defaults.headers.common.Authorization;
-    return
+function setToken (token, type, scopes = 'common') {
+  if(!Array.isArray(scopes)) {
+    scopes = [scopes]
   }
-  this.defaults.headers.common.Authorization = (type ? type + ' ' : '') + token
+  scopes.forEach(scope => {
+    if (!token) {
+      delete this.defaults.headers[scope].Authorization;
+      return
+    }
+    this.defaults.headers[scope].Authorization = (type ? type + ' ' : '') + token
+  })
 }
 
 // Nuxt friendly error handler
